@@ -1,4 +1,17 @@
-use std::fmt::{self, Write};
+use std::{fmt::{self}, mem, time::Instant};
+
+#[derive(Clone)]
+struct Particle {
+    y: u8,
+    z: u8,
+    x: u8,
+}
+
+struct Particles {
+    x: Vec<u8>,
+    y: Vec<u8>,
+    z: Vec<u8>,
+}
 
 #[derive(Clone)]
 struct Vector {
@@ -34,19 +47,41 @@ impl fmt::Display for Vector {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let data = [1u8, 2, 3, 4, 5];
-    let mut ptr: *const u8 = data.as_ptr();
-    let step = 2;
-    let end_rounded_up = ptr.wrapping_offset(6);
+fn instantiate_of_AOS() {
+    // Fast initialization using the Clone trait
+    let init_now = Instant::now();
+    let mut particles1 = vec![Particle {x: 10, y: 10, z: 10}; 1_000_000_000_0];
+    let init_elapsed = init_now.elapsed();
+    println!("AoS initialization elapsed: {:.2?}", init_elapsed);
 
-    let mut out = String::new();
-    while ptr != end_rounded_up {
-        unsafe {
-            write!(&mut out, "{}, ", *ptr)?;
-        }
-        ptr = ptr.wrapping_offset(step);
+    // Start timer AFTER allocation
+    let now = Instant::now();
+    for particle in particles1.iter_mut() {
+        particle.x = 20;
     }
-    assert_eq!(out.as_str(), "1, 3, 5, ");
-    Ok(())
+    let elapsed = now.elapsed();
+    println!("AoS iteration elapsed: {:.2?}", elapsed);
+}
+
+fn instantiate_of_SOA() {
+    // Fast initialization using vec! macro
+    let init_now = Instant::now();
+    let mut a = Particles {
+        x: vec![10; 1_000_000_000_0], 
+        y: vec![10; 1_000_000_000_0], 
+        z: vec![10; 1_000_000_000_0]
+    };
+    let init_elapsed = init_now.elapsed();
+    println!("SoA initialization elapsed: {:.2?}", init_elapsed);
+
+    // Start timer AFTER allocation
+    let now = Instant::now();
+    for el in a.x.iter_mut() {
+        *el = 20;
+    }
+    let elapsed = now.elapsed();
+    println!("SoA iteration elapsed: {:.2?}", elapsed);
+}
+
+fn main() {
 }
